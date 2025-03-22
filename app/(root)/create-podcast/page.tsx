@@ -31,6 +31,11 @@ import GeneratePodcast from "@/components/GeneratePodcast"
 import GenerateThumbnail from "@/components/GenerateThumbnail"
 import { Loader } from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
+import { GeneratePodcastProps } from "@/types"
+import { useRouter } from "next/navigation"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { toast } from "sonner"
 
 const voiceCategories = ['alloy', 'shimmer', 'nova', 'echo', 'fable', 'onyx'];
 
@@ -40,6 +45,7 @@ const formSchema = z.object({
 })
 
 const CreatePodcast = () => {
+  const router = useRouter();
   
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageStorageId, setImageStorageId] = useState<Id<"_storage"> | null>(null);
@@ -54,6 +60,10 @@ const CreatePodcast = () => {
   
   const[isSubmitting, setIsSubmitting] = useState(false);
 
+  const createPodcast = useMutation(api.podcasts.createPodcast);
+
+  //TODO: Add toast in onSubmit
+
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,11 +74,39 @@ const CreatePodcast = () => {
   })
  
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    try {
+      setIsSubmitting(true);
+      if(!audioUrl || !imageUrl || !voiceType){
+        toast('Please generate audio and image');
+        setIsSubmitting(false);
+        throw new Error('Please generate audio and image')
+      }
+
+      const podcast = await createPodcast({
+        podcastTitle: data.podcastTitle,
+        podcastDescription: data.podcastDescription,
+        audioUrl,
+        imageUrl,
+        imagePrompt,
+        voiceType,
+        voicePrompt,
+        views: 0,
+        audioDuration,
+        audioStorageId: audioStorageId!,
+        imageStorageId: imageStorageId!,
+      })
+      toast('Podcast Created');
+      setIsSubmitting(false);
+      router.push('/');
+
+    } catch (error) {
+      console.log(error);
+      toast('Something went wrong');
+      setIsSubmitting(false);
+    }
   }
+
 
   return (
     <section className="mt-10 flex flex-col">
@@ -142,14 +180,19 @@ const CreatePodcast = () => {
             <GeneratePodcast
               setAudioStorageId={setAudioStorageId}
               setAudio={setAudioUrl}
-              voiceType={voiceType}
+              voiceType={voiceType as GeneratePodcastProps['voiceType']}
               audio={audioUrl}
               voicePrompt={voicePrompt}
               setVoicePrompt={setVoicePrompt}
               setAudioDuration={setAudioDuration}
             />
 
-            <GenerateThumbnail/>
+            <GenerateThumbnail
+            setImage={setImageUrl}
+            setImageStorageId={setImageStorageId}
+            image={imageUrl}
+            imagePrompt={imagePrompt}
+            setImagePrompt={setImagePrompt}/>
 
             <div className="mt-10 w-full">
               <Button type="submit"

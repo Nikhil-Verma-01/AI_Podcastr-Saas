@@ -2,12 +2,17 @@ import LeftSidebar from "@/components/LeftSidebar";
 import MoblieNav from "@/components/MoblieNav";
 import RightSidebar from "@/components/RightSidebar";
 import Image from "next/image";
+import { Toaster } from "@/components/ui/sonner"
+
+
+
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <div className="relative flex flex-col">
         <main className="relative flex bg-black-3">
@@ -21,7 +26,7 @@ export default function RootLayout({
                         <MoblieNav/>
                     </div>
                     <div className="flex flex-col md:pd-14">
-                        Toaster
+                        <Toaster/>
                         {children}
                     </div>
                 </div>
